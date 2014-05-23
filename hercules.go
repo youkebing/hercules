@@ -1,28 +1,27 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
-//	"time"
-	"os"
+	"net/http"
+	//	"time"
+	"flag"
+	"github.com/lucacervasio/mosesacs/cwmp"
 	"log"
-  "time"
-  "flag"
-  "math/rand"
-  "strconv"
-  "github.com/lucacervasio/mosesacs/cwmp"
+	"math/rand"
+	"os"
+	"strconv"
+	"time"
 )
 
 var num_cpes = flag.Int("n", 2, "how many CPEs should I emulate ?")
 
 var AcsUrl = "http://localhost:9292/acs"
 
-
 func runConnection(cpe cwmp.CPE) {
-//	fmt.Printf("[%s] connecting with state %s\n", cpe.SerialNumber, cpe.State)
+	//	fmt.Printf("[%s] connecting with state %s\n", cpe.SerialNumber, cpe.State)
 	fmt.Printf("[%s] --> Starting connection to %s, sending Inform with eventCode %s\n", cpe.SerialNumber, AcsUrl, cpe.State)
 
 	buf := `<?xml version="1.0" encoding="UTF-8"?>
@@ -33,14 +32,14 @@ func runConnection(cpe cwmp.CPE) {
     <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
         <cwmp:Inform>
             <DeviceId>
-                <Manufacturer>`+cpe.Manufacturer+`</Manufacturer>
-                <OUI>`+cpe.OUI+`</OUI>
+                <Manufacturer>` + cpe.Manufacturer + `</Manufacturer>
+                <OUI>` + cpe.OUI + `</OUI>
                 <ProductClass>Router</ProductClass>
-                <SerialNumber>`+cpe.SerialNumber+`</SerialNumber>
+                <SerialNumber>` + cpe.SerialNumber + `</SerialNumber>
             </DeviceId>
             <Event>
                 <EventStruct>
-                    <EventCode>`+cpe.State+`</EventCode>
+                    <EventCode>` + cpe.State + `</EventCode>
                     <CommandKey/>
                 </EventStruct>
             </Event>
@@ -58,7 +57,7 @@ func runConnection(cpe cwmp.CPE) {
                 </ParameterValueStruct>
                 <ParameterValueStruct xsi:type="cwmp:ParameterValueStruct">
                     <Name>InternetGatewayDevice.DeviceInfo.SoftwareVersion</Name>
-                    <Value xsi:type="xsd:string">`+cpe.SoftwareVersion+`</Value>
+                    <Value xsi:type="xsd:string">` + cpe.SoftwareVersion + `</Value>
                 </ParameterValueStruct>
                 <ParameterValueStruct xsi:type="cwmp:ParameterValueStruct">
                     <Name>InternetGatewayDevice.DeviceInfo.SpecVersion</Name>
@@ -66,7 +65,7 @@ func runConnection(cpe cwmp.CPE) {
                 </ParameterValueStruct>
                 <ParameterValueStruct xsi:type="cwmp:ParameterValueStruct">
                     <Name>InternetGatewayDevice.ManagementServer.ConnectionRequestURL</Name>
-                    <Value xsi:type="xsd:string">http://10.19.0.`+cpe.SerialNumber+`:9600/`+cpe.SerialNumber+`</Value>
+                    <Value xsi:type="xsd:string">http://10.19.0.` + cpe.SerialNumber + `:9600/` + cpe.SerialNumber + `</Value>
                 </ParameterValueStruct>
                 <ParameterValueStruct xsi:type="cwmp:ParameterValueStruct">
                     <Name>InternetGatewayDevice.ManagementServer.ParameterKey</Name>
@@ -75,22 +74,20 @@ func runConnection(cpe cwmp.CPE) {
                 <ParameterValueStruct xsi:type="cwmp:ParameterValueStruct">
                     <Name>InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress
                     </Name>
-                    <Value xsi:type="xsd:string">10.19.0.`+cpe.SerialNumber+`</Value>
+                    <Value xsi:type="xsd:string">10.19.0.` + cpe.SerialNumber + `</Value>
                 </ParameterValueStruct>
             </ParameterList>
         </cwmp:Inform>
     </soap:Body>
 </soap:Envelope>`
 
-
-
-  tr := &http.Transport{}
-  client := &http.Client{ Transport: tr }
+	tr := &http.Transport{}
+	client := &http.Client{Transport: tr}
 
 	resp, err := client.Post(AcsUrl, "text/xml", bytes.NewBufferString(buf))
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Couldn't connect to %s",AcsUrl))
-    os.Exit(1)
+		fmt.Println(fmt.Sprintf("Couldn't connect to %s", AcsUrl))
+		os.Exit(1)
 	}
 
 	io.Copy(ioutil.Discard, resp.Body)
@@ -107,56 +104,54 @@ func runConnection(cpe cwmp.CPE) {
 	}
 	fmt.Printf("[%s] <-- ACS replied with statusCode: %d, content-lenght: %d\n", cpe.SerialNumber, resp.StatusCode, resp.ContentLength)
 
-  resp.Body.Close()
+	resp.Body.Close()
 
-  tr.CloseIdleConnections()
+	tr.CloseIdleConnections()
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-  fmt.Println("new connection Request")
+	fmt.Println("new connection Request")
 }
 
 func periodic(interval int, cpe cwmp.CPE) {
-  fmt.Printf("Bootstrapping CPE #%s with interval %ds\n", cpe.SerialNumber, interval)
-  runConnection(cpe)
-  for {
-    time.Sleep(time.Duration(interval) * time.Second)
-    runConnection(cpe)
-  }
+	fmt.Printf("Bootstrapping CPE #%s with interval %ds\n", cpe.SerialNumber, interval)
+	runConnection(cpe)
+	for {
+		time.Sleep(time.Duration(interval) * time.Second)
+		runConnection(cpe)
+	}
 }
 
 func random(min, max int) int {
-    rand.Seed(time.Now().UnixNano())
-    return rand.Intn(max - min) + min
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(max-min) + min
 }
 
 func main() {
-  // create cpe struct
+	// create cpe struct
 
-  flag.Parse()
-  fmt.Println("Starting Hercules with",*num_cpes,"cpes")
+	flag.Parse()
+	fmt.Println("Starting Hercules with", *num_cpes, "cpes")
 
-  CPEs := []cwmp.CPE{}
+	CPEs := []cwmp.CPE{}
 
 	// initialize CPEs and send bootstrap
 	//cpe1 := cwmp.CPE{"1", "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
-//	cpe2 := CPE{"2", "Telsey", "0014", "asd", "asd", "asd", "1 BOOT"}
+	//	cpe2 := CPE{"2", "Telsey", "0014", "asd", "asd", "asd", "1 BOOT"}
 
-  for i:=1; i <= *num_cpes; i++ {
-    tmp_cpe := cwmp.CPE{strconv.Itoa(i), "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
-	  CPEs = append(CPEs, tmp_cpe)
-  }
-
-
-//	fmt.Println(CPEs)
-
-	for _, c := range(CPEs) {
-		go periodic(random(10,120), c)
+	for i := 1; i <= *num_cpes; i++ {
+		tmp_cpe := cwmp.CPE{strconv.Itoa(i), "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
+		CPEs = append(CPEs, tmp_cpe)
 	}
 
+	//	fmt.Println(CPEs)
+
+	for _, c := range CPEs {
+		go periodic(random(10, 120), c)
+	}
 
 	// TODO run httpserver to wait for connection
-//	time.Sleep (3 * time.Second)
+	//	time.Sleep (3 * time.Second)
 	http.HandleFunc("/acs", handler)
 	fmt.Println("Listening connection request port on 9600")
 	err := http.ListenAndServe(":9600", nil)
@@ -166,4 +161,3 @@ func main() {
 	}
 
 }
-
