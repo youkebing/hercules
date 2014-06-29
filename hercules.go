@@ -9,7 +9,7 @@ import (
 	"net/http/cookiejar"
 	//	"time"
 	"flag"
-	"github.com/lucacervasio/mosesacs/cwmp"
+	"github.com/lucacervasio/mosesacs/daemon"
 	"log"
 	"math/rand"
 	"os"
@@ -22,7 +22,7 @@ var num_cpes = flag.Int("n", 2, "how many CPEs should I emulate ?")
 
 var AcsUrl = "http://localhost:9292/acs"
 
-func runConnection(cpe cwmp.CPE) {
+func runConnection(cpe daemon.CPE) {
 	//	fmt.Printf("[%s] connecting with state %s\n", cpe.SerialNumber, cpe.State)
 	fmt.Printf("[%s] --> Starting connection to %s, sending Inform with eventCode %s\n", cpe.SerialNumber, AcsUrl, cpe.State)
 
@@ -141,7 +141,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("new connection Request")
 }
 
-func periodic(interval int, cpe cwmp.CPE) {
+func periodic(interval int, cpe daemon.CPE) {
 	fmt.Printf("Bootstrapping CPE #%s with interval %ds\n", cpe.SerialNumber, interval)
 	runConnection(cpe)
 	for {
@@ -161,21 +161,22 @@ func main() {
 	flag.Parse()
 	fmt.Println("Starting Hercules with", *num_cpes, "cpes")
 
-	CPEs := []cwmp.CPE{}
+	CPEs := []daemon.CPE{}
 
 	// initialize CPEs and send bootstrap
-	//cpe1 := cwmp.CPE{"1", "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
+	//cpe1 := daemon.CPE{"1", "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
 	//	cpe2 := CPE{"2", "Telsey", "0014", "asd", "asd", "asd", "1 BOOT"}
 
 	for i := 1; i <= *num_cpes; i++ {
-		tmp_cpe := cwmp.CPE{strconv.Itoa(i), "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP", nil}
+		tmp_cpe := daemon.CPE{strconv.Itoa(i), "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP", nil, &daemon.Request{}}
 		CPEs = append(CPEs, tmp_cpe)
 	}
 
 	//	fmt.Println(CPEs)
 
 	for _, c := range CPEs {
-		go periodic(random(10, 120), c)
+		//go periodic(random(10, 120), c)
+		go periodic(random(10, 20), c)
 	}
 
 	// TODO run httpserver to wait for connection
