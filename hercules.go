@@ -6,7 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-  "net/http/cookiejar"
+	"net/http/cookiejar"
 	//	"time"
 	"flag"
 	"github.com/lucacervasio/mosesacs/cwmp"
@@ -15,7 +15,7 @@ import (
 	"os"
 	"strconv"
 	"time"
-  //"strings"
+	//"strings"
 )
 
 var num_cpes = flag.Int("n", 2, "how many CPEs should I emulate ?")
@@ -83,9 +83,9 @@ func runConnection(cpe cwmp.CPE) {
     </soap:Body>
 </soap:Envelope>`
 
-  cookieJar, _ := cookiejar.New(nil)
+	cookieJar, _ := cookiejar.New(nil)
 	tr := &http.Transport{}
-  client := &http.Client{Transport: tr, Jar: cookieJar}
+	client := &http.Client{Transport: tr, Jar: cookieJar}
 
 	resp, err := client.Post(AcsUrl, "text/xml", bytes.NewBufferString(buf))
 	if err != nil {
@@ -106,18 +106,18 @@ func runConnection(cpe cwmp.CPE) {
 		fmt.Println(err)
 	}
 
-  for {
-	  fmt.Printf("[%s] <-- ACS replied with statusCode: %d, content-lenght: %d\n", cpe.SerialNumber, resp.StatusCode, resp.ContentLength)
-    if resp.StatusCode == 204 {
-      break;
-    } else {
-      // parse and reply
-      tmp, _ := ioutil.ReadAll(resp.Body)
-      body := string(tmp)
-      
-      //if strings.Contains(body, "GetParameterValues") {
-        fmt.Println("Got GetParameterValues"+body)
-        resp, err = client.Post(AcsUrl, "text/xml", bytes.NewBufferString(`<?xml version="1.0" encoding="UTF-8"?>
+	for {
+		fmt.Printf("[%s] <-- ACS replied with statusCode: %d, content-lenght: %d\n", cpe.SerialNumber, resp.StatusCode, resp.ContentLength)
+		if resp.StatusCode == 204 {
+			break
+		} else {
+			// parse and reply
+			tmp, _ := ioutil.ReadAll(resp.Body)
+			body := string(tmp)
+
+			//if strings.Contains(body, "GetParameterValues") {
+			fmt.Println("Got GetParameterValues" + body)
+			resp, err = client.Post(AcsUrl, "text/xml", bytes.NewBufferString(`<?xml version="1.0" encoding="UTF-8"?>
         <soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <soap:Header/>
         <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
@@ -128,13 +128,11 @@ func runConnection(cpe cwmp.CPE) {
                           </cwmp:GetParameterValuesResponse>
                           </soap:Body>
                           </soap:Envelope>`))
-      //}
-    }
-  }
+			//}
+		}
+	}
 
-  resp.Body.Close()
-
-
+	resp.Body.Close()
 
 	tr.CloseIdleConnections()
 }
