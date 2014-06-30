@@ -168,7 +168,7 @@ func main() {
 	//	cpe2 := CPE{"2", "Telsey", "0014", "asd", "asd", "asd", "1 BOOT"}
 
 	for i := 1; i <= *num_cpes; i++ {
-		tmp_cpe := daemon.CPE{strconv.Itoa(i), "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP", nil, &daemon.Request{}}
+		tmp_cpe := daemon.CPE{strconv.Itoa(i), "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP", nil, &daemon.Request{}, "4324asd", time.Now().UTC()}
 		CPEs = append(CPEs, tmp_cpe)
 	}
 
